@@ -4,6 +4,8 @@
 
 Task 1 focuses on building the data foundation for the Olist MLOps project. The goal is to load the **Brazilian E-Commerce Public Dataset by Olist** into a PostgreSQL database running locally with Docker, understand the relationships between the tables, and verify that the data can be queried and joined correctly.
 
+The project uses the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
+
 The database created here will be used as the starting point for Task 2.
 
 ## Tech Stack
@@ -36,8 +38,10 @@ Dataset_Olist/
 The raw Olist CSV files are not included in the repository.
 
 ## Dataset & Relationships
+![Olist relational schema](assets/olist_schema.png)
 
 The dataset contains nine CSV files representing customers, orders, order items, products, sellers, payments, reviews, geolocation data, and product category translations.
+
 
 The main relationships are:
 
