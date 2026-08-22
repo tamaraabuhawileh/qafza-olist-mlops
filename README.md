@@ -1,694 +1,460 @@
-\# Olist MLOps Project
+# Olist MLOps Project
 
+## Qafza MLOps Training 2026/2027 — Task 1
 
+### Get the Data Into a Database
 
-\## Qafza MLOps Training 2026/2027 — Task 1
+This repository contains my implementation of **Task 1** of the Qafza MLOps Training 2026/2027.
 
+The goal of this task is to establish the data foundation for the MLOps project by loading the **Brazilian E-Commerce Public Dataset by Olist** into a relational PostgreSQL database running locally with Docker.
 
+The PostgreSQL database created in this task will serve as the data source for the subsequent stages of the project.
 
-\### Get the Data Into a Database
+---
 
-
-
-This repository contains my implementation of \*\*Task 1\*\* of the Qafza MLOps Training 2026/2027.
-
-
-
-The goal of this task is to establish the data foundation for the project by loading the Brazilian E-Commerce Public Dataset by Olist into a relational PostgreSQL database running locally with Docker.
-
-
-
-This database will serve as the source for the subsequent stages of the MLOps project.
-
-
-
-\---
-
-
-
-\## Task Objective
-
-
+## Task Objectives
 
 The objectives of Task 1 are to:
 
+- Understand the Olist dataset and its relational structure
+- Understand the future ML problem: predicting whether an order will be delivered late or on time
+- Run PostgreSQL locally using Docker
+- Design a relational database schema
+- Ingest the Olist CSV datasets into PostgreSQL
+- Validate the loaded data
+- Query the database
+- Test relationships between tables using SQL joins
 
+> EDA, feature engineering, label creation, and model training are intentionally outside the scope of Task 1.
 
-\- Understand the Olist dataset and its relational structure
+---
 
-\- Understand the future ML problem: predicting whether an order will be delivered late or on time
+## Tech Stack
 
-\- Run PostgreSQL locally using Docker
+- Python
+- PostgreSQL 16
+- Docker / Docker Compose
+- Pandas
+- SQLAlchemy
+- psycopg2
+- SQL
 
-\- Design the relational database schema
+---
 
-\- Ingest the Olist CSV datasets into PostgreSQL
-
-\- Validate the loaded data
-
-\- Query the database
-
-\- Test relationships between tables using SQL joins
-
-
-
-EDA, feature engineering, and model training are intentionally outside the scope of Task 1.
-
-
-
-\---
-
-
-
-\## Tech Stack
-
-
-
-\- Python
-
-\- PostgreSQL 16
-
-\- Docker / Docker Compose
-
-\- Pandas
-
-\- SQLAlchemy
-
-\- psycopg2
-
-\- SQL
-
-
-
-\---
-
-
-
-\## Project Structure
-
-
+## Project Structure
 
 ```text
-
-Dataset\_Olist/
-
+Dataset_Olist/
 │
-
 ├── data/
-
 │   └── raw/
-
 │       └── .gitkeep
-
 │
-
 ├── sql/
-
-│   ├── 01\_create\_tables.sql
-
-│   └── 02\_validation.sql
-
+│   ├── 01_create_tables.sql
+│   └── 02_validation.sql
 │
-
 ├── src/
-
-│   ├── inspect\_data.py
-
+│   ├── inspect_data.py
 │   └── ingest.py
-
 │
-
 ├── .gitignore
-
 ├── .env.example
-
 ├── docker-compose.yml
-
 ├── requirements.txt
-
 └── README.md
-
 ```
 
+The raw Olist CSV files are not committed to this repository.
 
+---
 
-The raw Olist CSV files are not committed to the repository.
+## Dataset
 
+The project uses the **Brazilian E-Commerce Public Dataset by Olist**.
 
-
-\---
-
-
-
-\## Dataset
-
-
-
-The project uses the Brazilian E-Commerce Public Dataset by Olist.
-
-
-
-The source contains nine CSV files:
-
-
+The source dataset contains nine CSV files:
 
 ```text
-
-olist\_customers\_dataset.csv
-
-olist\_geolocation\_dataset.csv
-
-olist\_orders\_dataset.csv
-
-olist\_order\_items\_dataset.csv
-
-olist\_order\_payments\_dataset.csv
-
-olist\_order\_reviews\_dataset.csv
-
-olist\_products\_dataset.csv
-
-olist\_sellers\_dataset.csv
-
-product\_category\_name\_translation.csv
-
+olist_customers_dataset.csv
+olist_geolocation_dataset.csv
+olist_orders_dataset.csv
+olist_order_items_dataset.csv
+olist_order_payments_dataset.csv
+olist_order_reviews_dataset.csv
+olist_products_dataset.csv
+olist_sellers_dataset.csv
+product_category_name_translation.csv
 ```
 
-
-
-The files should be placed under:
-
-
+After downloading the dataset, the files should be placed under:
 
 ```text
-
 data/raw/
-
 ```
 
+---
 
+## Relational Structure
 
-\---
+The Olist dataset consists of multiple related tables.
 
-
-
-\## Relational Structure
-
-
-
-The main relationships are:
-
-
+The main relationships used in this project are:
 
 ```text
-
 customers
-
-&#x20;   │
-
-&#x20;   │ customer\_id
-
-&#x20;   ▼
-
+    │
+    │ customer_id
+    ▼
 orders
-
-&#x20;   │
-
-&#x20;   │ order\_id
-
-&#x20;   ├──────────────► order\_items
-
-&#x20;   │                    │
-
-&#x20;   │                    ├── product\_id ──► products
-
-&#x20;   │                    │
-
-&#x20;   │                    └── seller\_id ───► sellers
-
-&#x20;   │
-
-&#x20;   ├──────────────► order\_payments
-
-&#x20;   │
-
-&#x20;   └──────────────► order\_reviews
-
+    │
+    │ order_id
+    ├──────────────► order_items
+    │                    │
+    │                    ├── product_id ──► products
+    │                    │
+    │                    └── seller_id ───► sellers
+    │
+    ├──────────────► order_payments
+    │
+    └──────────────► order_reviews
 ```
-
-
 
 Important identifiers include:
 
-
-
 | Key | Relationship |
-
 |---|---|
+| `customer_id` | Customers → Orders |
+| `order_id` | Orders → Order Items / Payments / Reviews |
+| `product_id` | Order Items → Products |
+| `seller_id` | Order Items → Sellers |
 
-| `customer\_id` | Customers → Orders |
+The `geolocation` table provides geographical information based on ZIP-code prefixes, while `product_category_translation` provides English translations for product category names.
 
-| `order\_id` | Orders → Items / Payments / Reviews |
+---
 
-| `product\_id` | Order Items → Products |
+## Machine Learning Problem
 
-| `seller\_id` | Order Items → Sellers |
+The later stages of this project will build a model to predict whether an order will be delivered **late or on time**.
 
-
-
-\---
-
-
-
-\## Machine Learning Problem
-
-
-
-The later stages of this project will build a model to predict whether an order will be delivered \*\*late or on time\*\*.
-
-
-
-The relevant delivery fields include:
-
-
+Two important fields for creating the target are:
 
 ```text
-
-order\_delivered\_customer\_date
-
-order\_estimated\_delivery\_date
-
+order_delivered_customer_date
+order_estimated_delivery_date
 ```
-
-
 
 Conceptually:
 
-
-
 ```text
-
-Actual delivery > Estimated delivery
-
+Actual delivery date > Estimated delivery date
 → Late
 
-
-
-Actual delivery <= Estimated delivery
-
+Actual delivery date <= Estimated delivery date
 → On Time
-
 ```
 
+The target variable is **not created in Task 1**. Label creation and ML dataset preparation are part of the next stage of the project.
 
+---
 
-The target is not created in Task 1. Label creation and ML dataset preparation are part of the next stage of the project.
+## Setup
 
-
-
-\---
-
-
-
-\## Database Setup
-
-
-
-PostgreSQL 16 runs locally inside a Docker container.
-
-
-
-Start the database with:
-
-
+### 1. Clone the Repository
 
 ```bash
-
-docker compose up -d
-
+git clone <repository-url>
+cd Dataset_Olist
 ```
 
+### 2. Create a Virtual Environment
 
+On Windows:
 
-Verify that the container is running:
-
-
-
-```bash
-
-docker ps
-
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
 ```
 
+### 3. Install Dependencies
 
-
-Connect to PostgreSQL:
-
-
-
-```bash
-
-docker exec -it olist-postgres psql -U olist\_user -d olist
-
-```
-
-
-
-\---
-
-
-
-\## Create the Database Schema
-
-
-
-The relational schema is defined in:
-
-
-
-```text
-
-sql/01\_create\_tables.sql
-
-```
-
-
-
-On Windows Command Prompt:
-
-
-
-```bash
-
-docker exec -i olist-postgres psql -U olist\_user -d olist < sql\\01\_create\_tables.sql
-
-```
-
-
-
-The schema defines primary keys, composite keys, and foreign-key relationships between the Olist tables.
-
-
-
-\---
-
-
-
-\## Data Ingestion
-
-
-
-Activate the virtual environment:
-
-
-
-```bash
-
-.venv\\Scripts\\activate
-
-```
-
-
-
-Install dependencies:
-
-
-
-```bash
-
+```cmd
 pip install -r requirements.txt
-
 ```
 
+### 4. Configure Environment Variables
 
-
-Run the ingestion pipeline:
-
-
-
-```bash
-
-python src\\ingest.py
-
-```
-
-
-
-The ingestion script reads the raw CSV files and loads them into their corresponding PostgreSQL tables.
-
-
-
-Large datasets are inserted in chunks to avoid oversized database insert operations.
-
-
-
-The raw source data is preserved unchanged.
-
-
-
-\---
-
-
-
-\## Loaded Data
-
-
-
-The completed ingestion produced:
-
-
-
-| Table | Rows |
-
-|---|---:|
-
-| customers | 99,441 |
-
-| sellers | 3,095 |
-
-| products | 32,951 |
-
-| orders | 99,441 |
-
-| order\_items | 112,650 |
-
-| order\_payments | 103,886 |
-
-| order\_reviews | 99,224 |
-
-| geolocation | 1,000,163 |
-
-| product\_category\_translation | 71 |
-
-
-
-All nine source datasets were successfully loaded into PostgreSQL.
-
-
-
-\---
-
-
-
-\## Validation
-
-
-
-Validation queries are stored in:
-
-
-
-```text
-
-sql/02\_validation.sql
-
-```
-
-
-
-They include:
-
-
-
-\- Row-count validation
-
-\- Reading sample records
-
-\- Two-table joins
-
-\- Multi-table joins
-
-\- Inspection of fields relevant to the future delivery prediction problem
-
-
+Create a `.env` file based on `.env.example`.
 
 Example:
 
-
-
-```sql
-
-SELECT
-
-&#x20;   o.order\_id,
-
-&#x20;   o.order\_status,
-
-&#x20;   c.customer\_city,
-
-&#x20;   c.customer\_state
-
-FROM orders AS o
-
-JOIN customers AS c
-
-&#x20;   ON o.customer\_id = c.customer\_id
-
-LIMIT 20;
-
+```env
+POSTGRES_DB=olist
+POSTGRES_USER=olist_user
+POSTGRES_PASSWORD=your_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
 ```
 
+The real `.env` file is excluded from Git.
 
+### 5. Add the Dataset
+
+Place the nine Olist CSV files inside:
+
+```text
+data/raw/
+```
+
+---
+
+## PostgreSQL with Docker
+
+PostgreSQL 16 runs locally inside a Docker container.
+
+Start the database:
+
+```cmd
+docker compose up -d
+```
+
+Verify that the container is running:
+
+```cmd
+docker ps
+```
+
+Connect to PostgreSQL:
+
+```cmd
+docker exec -it olist-postgres psql -U olist_user -d olist
+```
+
+Inside PostgreSQL, the tables can be listed using:
+
+```sql
+\dt
+```
+
+---
+
+## Create the Database Schema
+
+The relational schema is defined in:
+
+```text
+sql/01_create_tables.sql
+```
+
+From Windows Command Prompt:
+
+```cmd
+docker exec -i olist-postgres psql -U olist_user -d olist < sql\01_create_tables.sql
+```
+
+The schema defines the required:
+
+- Tables
+- Primary keys
+- Composite keys
+- Foreign keys
+- Relationships between the Olist entities
+
+---
+
+## Data Ingestion
+
+Run the ingestion pipeline:
+
+```cmd
+python src\ingest.py
+```
+
+The ingestion pipeline:
+
+1. Reads each source CSV file
+2. Applies required column mappings
+3. Loads the tables in relational dependency order
+4. Uses chunked inserts for large datasets
+5. Inserts the data into PostgreSQL
+
+The original files under `data/raw/` remain unchanged.
+
+---
+
+## Loaded Data
+
+The completed ingestion produced the following table sizes:
+
+| Table | Rows |
+|---|---:|
+| `customers` | 99,441 |
+| `sellers` | 3,095 |
+| `products` | 32,951 |
+| `orders` | 99,441 |
+| `order_items` | 112,650 |
+| `order_payments` | 103,886 |
+| `order_reviews` | 99,224 |
+| `geolocation` | 1,000,163 |
+| `product_category_translation` | 71 |
+
+All nine source datasets were successfully loaded into PostgreSQL.
+
+---
+
+## Database Validation
+
+Validation queries are stored in:
+
+```text
+sql/02_validation.sql
+```
+
+The validation covers:
+
+- Table row counts
+- Sample records
+- Two-table joins
+- Multi-table joins
+- Delivery-related fields required for the future ML problem
+
+### Example: Orders and Customers
+
+```sql
+SELECT
+    o.order_id,
+    o.order_status,
+    c.customer_city,
+    c.customer_state
+FROM orders AS o
+JOIN customers AS c
+    ON o.customer_id = c.customer_id
+LIMIT 20;
+```
 
 This validates the relationship:
 
-
-
 ```text
-
-customers.customer\_id
-
-&#x20;       ↓
-
-orders.customer\_id
-
+customers.customer_id
+        │
+        ▼
+orders.customer_id
 ```
 
+### Example: Multi-Table Join
 
-
-\---
-
-
-
-\## Implementation Notes
-
-
-
-During ingestion, two issues were identified and resolved.
-
-
-
-\### Large Inserts
-
-
-
-Loading large datasets in a single database operation resulted in oversized SQL inserts.
-
-
-
-The ingestion pipeline was updated to use chunked inserts.
-
-
-
-\### Product Column Naming
-
-
-
-The original Olist products dataset contains:
-
-
-
-```text
-
-product\_name\_lenght
-
-product\_description\_lenght
-
+```sql
+SELECT
+    o.order_id,
+    o.order_status,
+    p.product_category_name,
+    s.seller_city,
+    s.seller_state,
+    oi.price,
+    oi.freight_value
+FROM orders AS o
+JOIN order_items AS oi
+    ON o.order_id = oi.order_id
+JOIN products AS p
+    ON oi.product_id = p.product_id
+JOIN sellers AS s
+    ON oi.seller_id = s.seller_id
+LIMIT 20;
 ```
 
+This confirms that the relational tables can be combined successfully for later ML dataset construction.
 
+---
 
-The database uses:
+## Implementation Challenges and Solutions
 
+During implementation, two main ingestion issues were identified and resolved.
 
+### 1. Large Database Inserts
 
-```text
+The initial ingestion approach attempted to insert too many records in a single database operation, resulting in an oversized SQL statement.
 
-product\_name\_length
+The ingestion pipeline was updated to use chunked inserts:
 
-product\_description\_length
-
+```python
+chunksize=2000
 ```
 
+This allows large tables, including the geolocation dataset with more than one million rows, to be loaded reliably.
 
+### 2. Product Column Naming
 
-The ingestion layer maps these source column names to the database schema while preserving the original raw CSV files.
+The original Olist products dataset contains the column names:
 
+```text
+product_name_lenght
+product_description_lenght
+```
 
+The PostgreSQL schema uses the corrected names:
 
-\---
+```text
+product_name_length
+product_description_length
+```
 
+The ingestion layer maps the source columns before insertion:
 
+```python
+df = df.rename(
+    columns={
+        "product_name_lenght": "product_name_length",
+        "product_description_lenght": "product_description_length",
+    }
+)
+```
 
-\## Task 1 Status
+This keeps the raw source files unchanged while maintaining cleaner column names in the database.
 
+---
 
+## Task 1 Completion
 
-\- \[x] Olist dataset downloaded
+- [x] Olist dataset downloaded
+- [x] Dataset tables and relationships understood
+- [x] Late/on-time delivery problem understood
+- [x] PostgreSQL running locally
+- [x] PostgreSQL containerized using Docker
+- [x] Relational database schema created
+- [x] Primary and foreign key relationships defined
+- [x] All nine source datasets ingested
+- [x] Database queried successfully
+- [x] Table row counts validated
+- [x] SQL joins tested
 
-\- \[x] Dataset tables and relationships understood
+**Task 1 completed successfully.**
 
-\- \[x] Late/on-time delivery problem understood
+---
 
-\- \[x] PostgreSQL running locally
-
-\- \[x] PostgreSQL containerized using Docker
-
-\- \[x] Relational database schema created
-
-\- \[x] All nine source datasets ingested
-
-\- \[x] Database queried successfully
-
-\- \[x] Table row counts validated
-
-\- \[x] SQL joins tested
-
-
-
-\*\*Task 1 completed.\*\*
-
-
-
-\---
-
-
-
-\## Next Stage
-
-
+## Next Stage — Task 2
 
 Task 2 will build directly on the PostgreSQL database created in Task 1.
 
+The next stage will consist of six ordered notebooks:
 
+1. **Read and join the tables**  
+   Build one ML table with one row per order.
 
-The next stage will cover:
+2. **Create the labels**  
+   Create the late/on-time delivery target and validate its distribution.
 
+3. **Train / validation / test split**  
+   Split the dataset before detailed analysis to avoid data leakage.
 
+4. **Exploratory Data Analysis (EDA)**  
+   Perform detailed analysis using the training split only.
 
-1\. Reading and joining the database tables into one ML table
+5. **Feature engineering**  
+   Build features, handle missing values, encode categorical variables, and persist fitted transformations.
 
-2\. Creating the late/on-time delivery label
+6. **Train, tune, and evaluate**  
+   Establish a baseline, train and tune the model, and perform the final evaluation.
 
-3\. Creating train, validation, and test splits
+Each stage will save its outputs as **artifacts**, allowing the next stage to consume the previous stage's results without recomputing them.
 
-4\. Performing EDA on the training data
-
-5\. Feature engineering and persistence of fitted transformations
-
-6\. Training, tuning, and evaluating the first model
-
-
-
-Intermediate outputs will be persisted as artifacts so that each stage can consume the output of the previous stage reproducibly.
-
+This structure will also make the workflow reproducible and prepare the project for later conversion from notebooks into production MLOps pipelines.
