@@ -1,0 +1,13 @@
+
+Notebook 04 - EDA Findings
+
+- EDA was performed using the training split only.
+- The target is imbalanced; late orders are the minority class.
+- Missing values occur in several features and require handling during feature engineering.
+- Numerical variables show different ranges, skewness, and outliers.
+- Categorical variables vary considerably in cardinality; rare categories may require grouping.
+- Late-delivery rates vary across time and geographic groups.
+- Purchase-time and estimated-delivery information are potential predictive features.
+- Customer ZIP/state and seller geography may provide useful delivery information.
+- Customer coordinates are currently unavailable, so customer-seller distance could not yet be calculated.
+- Post-delivery information, reviews, actual delivery dates, IDs, and the target itself must not be used as predictors.
