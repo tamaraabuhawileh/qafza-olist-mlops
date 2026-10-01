@@ -17,3 +17,5 @@ logs/
 # Downloaded model cache
 models/*
 !models/.gitkeep
+
+.venv-check/

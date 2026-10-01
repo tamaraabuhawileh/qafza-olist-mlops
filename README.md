@@ -645,3 +645,55 @@ This project introduces several practices that will support later productionizat
 - Persisted preprocessing and model objects
 
 The resulting artifacts provide the foundation for converting the notebook workflow into a reusable training and inference pipeline.
+
+## Task 3 — Inference Service (In Progress)
+
+Task 3 builds an inference service around the model and fitted
+preprocessor from Task 2. Training remains in the notebooks.
+
+### Development setup
+
+Run these commands from the repository root using Python 3.14.7.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements/dev.txt
+.\.venv\Scripts\python.exe -m pip check
+```
+
+For runtime dependencies only, install `requirements/runtime.txt`.
+
+### Project structure
+
+- `app/`: API routes and request/response schemas.
+- `config/`: inference configuration.
+- `src/olist_inference/`: reusable inference modules.
+- `tests/`: unit, data, model, and integration tests.
+- `requirements/`: pinned runtime and development dependencies.
+- `models/`: downloaded model cache.
+- `notebooks/`: existing analysis and training notebooks.
+- `artifacts/`: saved Task 2 datasets and fitted objects.
+
+### Configuration
+
+The default configuration is `config/inference.json`.
+Relative paths are resolved against the project root.
+
+To use another configuration in PowerShell:
+
+```powershell
+$env:OLIST_CONFIG = "config/inference.json"
+```
+
+Keep secrets and connection strings in environment variables.
+Never commit `.env`.
+
+The classification threshold is read from the saved
+`artifacts/06_model/model_config.json`; its current value is 0.40.
+
+### Progress
+
+- Repository structure and configuration loader added.
+- Runtime and development dependencies pinned.
+- Saved preprocessor and model loaded in a fresh environment.
+- Prediction parity, API, containers, and CI/CD are pending.
