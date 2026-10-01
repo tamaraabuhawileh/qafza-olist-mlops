@@ -1,0 +1,24 @@
+{
+  "service": {
+    "name": "olist-delivery-inference"
+  },
+  "artifacts": {
+    "preprocessor_path": "artifacts/05_features/preprocessor.joblib",
+    "input_features_path": "artifacts/05_features/input_features.json",
+    "transformed_features_path": "artifacts/05_features/feature_list.json",
+    "model_path": "artifacts/06_model/final_model.joblib",
+    "model_config_path": "artifacts/06_model/model_config.json"
+  },
+  "prediction": {
+    "positive_class": 1,
+    "labels": {
+      "0": "on_time",
+      "1": "late"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "directory": "logs",
+    "filename": "inference.log"
+  }
+}

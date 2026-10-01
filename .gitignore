@@ -1,24 +1,19 @@
-# Environment variables
-.env
+# Additional environment files
+.env.*
+!.env.example
 
-# Python virtual environment
-.venv/
-venv/
+# Testing and formatting
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+test.py
 
-# Python cache
-__pycache__/
-*.py[cod]
+# Runtime logs
+logs/
+*.log
 
-# Raw Olist data
-data/raw/*.csv
-
-# Jupyter
-.ipynb_checkpoints/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
+# Downloaded model cache
+models/*
+!models/.gitkeep
