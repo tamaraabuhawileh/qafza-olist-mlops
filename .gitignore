@@ -19,3 +19,11 @@ models/*
 !models/.gitkeep
 
 .venv-check/
+.env
+.venv/
+.venv312/
+__pycache__/
+*.py[cod]
+logs/
+*.log
+.ipynb_checkpoints/

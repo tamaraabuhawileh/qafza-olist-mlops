@@ -48,6 +48,7 @@ def load_config() -> dict[str, Any]:
         config = yaml.safe_load(file)
 
     if not isinstance(config, dict):
+        
         raise TypeError(
         "Configuration file must contain a YAML mapping."
     )

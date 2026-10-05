@@ -1,0 +1,25 @@
+service:
+  name: olist-delivery-inference
+  version: "1.0.0"
+  host: "0.0.0.0"
+  port: 8000
+
+artifacts:
+  preprocessor_path: artifacts/05_features/preprocessor.joblib
+  feature_list_path: artifacts/05_features/feature_list.json
+  input_features_path: artifacts/05_features/input_features.json
+  model_path: artifacts/06_model/final_model.joblib
+  model_config_path: artifacts/06_model/model_config.json
+  results_path: artifacts/06_model/results.json
+
+prediction:
+  default_threshold: 0.5
+
+logging:
+  level: INFO
+  directory: logs
+  filename: inference.log
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+
+monitoring:
+  prediction_log_path: logs/predictions.jsonl
