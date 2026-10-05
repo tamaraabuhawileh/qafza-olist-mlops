@@ -1,44 +1,111 @@
 # Olist MLOps Project
 
-## Qafza MLOps Training 2026/2027 — Tasks 1 & 2
+## Qafza MLOps Training 2026/2027
 
-This project builds an end-to-end machine learning workflow using the **Brazilian E-Commerce Public Dataset by Olist**.
+This project develops an end-to-end machine learning workflow using the
+**Brazilian E-Commerce Public Dataset by Olist**.
 
-- **Task 1** builds the data foundation by loading the Olist datasets into PostgreSQL using Docker and validating the relational structure.
-- **Task 2** transforms the relational data into an ML-ready dataset for predicting whether an order will be delivered **late or on time**, following a reproducible notebook and artifact-based workflow.
+The project evolves through three phases:
 
-Dataset: [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
+```text
+Phase 1                     Phase 2                      Phase 3
+Data Foundation      →      ML Development       →      Inference Service
+                         
+PostgreSQL                   ML Dataset                   FastAPI
+Docker                       EDA                          Validation
+SQL                          Feature Engineering          Logging
+Data Ingestion               Model Training               Testing
+Validation                   Evaluation                   DVC
+                             Saved Artifacts              Data Quality
+```
+
+The final machine learning objective is to predict whether an Olist order
+will be delivered **late or on time**.
+
+The project emphasizes reproducibility, leakage prevention, separation of
+training and inference, artifact persistence, automated testing, and
+production-oriented ML engineering.
 
 ---
 
-## Tech Stack
+# Project Phases
 
-- Python
+| Phase | Task | Objective | Status |
+|---|---|---|---|
+| Phase 1 | Task 1 | Build the relational data foundation | Completed |
+| Phase 2 | Task 2 | Build and evaluate the ML pipeline | Completed |
+| Phase 3 | Task 3 | Productionize model inference | In Progress |
+
+---
+
+# Tech Stack
+
+### Data & Database
+
 - PostgreSQL 16
+- SQL
 - Docker / Docker Compose
 - Pandas
 - SQLAlchemy
 - psycopg2
-- Jupyter Notebook
+
+### Machine Learning
+
 - scikit-learn
 - XGBoost
+- LightGBM
 - Joblib
 - PyArrow
 - Matplotlib
+- Jupyter Notebook
+
+### Inference & MLOps
+
+- FastAPI
+- Uvicorn
+- Pytest
+- Ruff
+- DVC
+- Great Expectations
+- Python logging
 
 ---
 
-# Task 1 — Data Foundation
+# Dataset
 
-Task 1 focuses on building the data foundation for the project.
+The project uses the
+[Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
 
-The goal is to load the Olist datasets into a PostgreSQL database running locally with Docker, understand the relationships between the tables, and verify that the data can be queried and joined correctly.
+The dataset contains approximately 100,000 orders from multiple Brazilian
+marketplaces and includes information about:
 
-## Dataset & Relationships
+- Customers
+- Orders
+- Order items
+- Products
+- Sellers
+- Payments
+- Reviews
+- Geolocation
+- Product category translations
+
+Raw CSV files are not committed to the repository.
+
+---
+
+# Phase 1 — Data Foundation
+
+## Task 1: PostgreSQL, Docker, and Data Ingestion
+
+Phase 1 establishes the data foundation for the ML project.
+
+The objective is to load the relational Olist datasets into PostgreSQL,
+understand the relationships between the tables, and verify that the data can
+be queried and joined reliably.
+
+## Relational Schema
 
 ![Olist relational schema](assets/olist_schema.png)
-
-The dataset contains nine CSV files representing customers, orders, order items, products, sellers, payments, reviews, geolocation data, and product category translations.
 
 The main relationships are:
 
@@ -57,7 +124,7 @@ orders
 
 Main keys:
 
-| Key | Connects |
+| Key | Relationship |
 |---|---|
 | `customer_id` | customers → orders |
 | `order_id` | orders → items, payments, reviews |
@@ -66,7 +133,7 @@ Main keys:
 
 ## Database Ingestion
 
-All nine datasets were successfully loaded into PostgreSQL:
+All nine Olist datasets were loaded into PostgreSQL.
 
 | Table | Rows |
 |---|---:|
@@ -80,13 +147,20 @@ All nine datasets were successfully loaded into PostgreSQL:
 | geolocation | 1,000,163 |
 | product_category_translation | 71 |
 
-The ingestion script uses chunked inserts for the larger tables.
+The ingestion pipeline uses chunked inserts for larger datasets.
 
-It also maps the original Olist product columns `product_name_lenght` and `product_description_lenght` to the corrected database column names.
+The original Olist product columns:
+
+```text
+product_name_lenght
+product_description_lenght
+```
+
+are mapped to corrected database column names during ingestion.
 
 ## Database Validation
 
-Database checks and example joins are available in:
+Database validation queries are available in:
 
 ```text
 sql/02_validation.sql
@@ -106,42 +180,59 @@ JOIN customers AS c
 LIMIT 20;
 ```
 
-This confirms that the relational tables can be queried and joined successfully.
+These checks verify that the tables were loaded correctly and that the
+relationships can be queried successfully.
 
-## Task 1 Status
+## Phase 1 Output
 
-- [x] Olist data downloaded and understood
-- [x] PostgreSQL running locally with Docker
+Phase 1 produces a validated relational database that becomes the source for
+the machine learning workflow in Phase 2.
+
+### Task 1 Status
+
+- [x] Olist datasets understood
+- [x] PostgreSQL environment created with Docker
 - [x] Relational schema created
-- [x] All datasets loaded into PostgreSQL
-- [x] Table relationships verified
-- [x] SQL queries and joins tested
-- [x] Late vs. on-time prediction problem defined
+- [x] Nine datasets ingested
+- [x] Row counts validated
+- [x] Relationships verified
+- [x] SQL joins tested
+- [x] ML problem defined
 
-**Task 1 completed.**
-
----
-
-# Task 2 — From Relational Data to ML Pipeline
-
-Task 2 builds on the PostgreSQL database created in Task 1.
-
-The objective is to create a reproducible machine learning workflow that:
-
-1. Joins the relational tables into an order-level ML dataset
-2. Creates the late-delivery target
-3. Splits the data into train, validation, and test sets
-4. Performs EDA using the training data only
-5. Builds and saves a reproducible feature-engineering pipeline
-6. Trains, compares, tunes, and evaluates classification models
-
-Each stage produces artifacts that are consumed by the following stage.
+**Phase 1 completed.**
 
 ---
 
-## ML Problem
+# Phase 2 — Machine Learning Development
 
-The objective is to predict whether an order will be delivered **late or on time**.
+## Task 2: From Relational Data to an ML Pipeline
+
+Phase 2 transforms the PostgreSQL data into a reproducible machine learning
+workflow.
+
+The objective is to predict whether an order will be delivered:
+
+```text
+0 = On Time
+1 = Late
+```
+
+The phase covers:
+
+1. Relational table aggregation and joining
+2. Target creation
+3. Chronological data splitting
+4. Training-only exploratory data analysis
+5. Leakage-aware feature engineering
+6. Reproducible preprocessing
+7. Model training and comparison
+8. Hyperparameter and threshold selection
+9. Final evaluation
+10. Artifact persistence
+
+---
+
+# ML Problem
 
 The target is derived from:
 
@@ -150,22 +241,17 @@ order_delivered_customer_date
 order_estimated_delivery_date
 ```
 
-An order is labeled:
+An order is considered late when its actual delivery date occurs after its
+estimated delivery date.
 
-```text
-0 = On Time
-1 = Late
-```
-
-A late order is one whose actual delivery date is later than its estimated delivery date.
-
-Orders without sufficient delivery information are not assigned an artificial label.
+Orders without sufficient information to determine the delivery outcome are
+not assigned an artificial label.
 
 ---
 
-# Task 2 Notebook Pipeline
+# Task 2 Pipeline
 
-Task 2 is organized into six notebooks.
+Task 2 is organized into six sequential notebooks:
 
 ```text
 01_read_and_join.ipynb
@@ -181,7 +267,8 @@ Task 2 is organized into six notebooks.
 06_train_tune_evaluate.ipynb
 ```
 
-Each notebook has one main responsibility and saves artifacts for the next stage.
+Each notebook has one main responsibility and saves artifacts for the next
+stage.
 
 ---
 
@@ -189,26 +276,28 @@ Each notebook has one main responsibility and saves artifacts for the next stage
 
 `01_read_and_join.ipynb`
 
-Reads the PostgreSQL tables created in Task 1 and constructs a single ML table with approximately one row per order.
+Reads the PostgreSQL tables created in Phase 1 and constructs an order-level
+ML table.
 
-One-to-many tables such as order items, payments, and reviews are aggregated to order level before joining to avoid duplicating orders.
+One-to-many tables are aggregated before joining to avoid creating duplicate
+orders.
 
-Examples of aggregated information include:
+Aggregated information includes:
 
-- Number of items
-- Number of unique products
-- Number of sellers
+- Item counts
+- Unique product counts
+- Seller counts
 - Item prices
-- Freight value
+- Freight values
 - Payment information
 - Product dimensions
 - Product categories
 - Seller information
 - Review information
 
-The resulting table is validated to ensure that `order_id` remains unique.
+The final dataset is validated to ensure that `order_id` remains unique.
 
-**Artifact:**
+### Output
 
 ```text
 artifacts/01_joined/ml_orders.parquet
@@ -220,13 +309,13 @@ artifacts/01_joined/ml_orders.parquet
 
 `02_create_labels.ipynb`
 
-Creates the late-vs-on-time target.
+Creates the late-delivery target.
 
-Missing delivery dates are investigated before labeling. Most orders without an actual delivery date correspond to statuses such as shipped, canceled, unavailable, invoiced, or processing.
+Missing actual delivery dates are investigated before target creation.
+Orders without enough information to determine their delivery outcome are
+excluded from the supervised-learning population.
 
-Only orders with sufficient information to determine the delivery outcome are retained for the supervised learning problem.
-
-The target is stored as:
+The target column is:
 
 ```text
 is_late
@@ -239,9 +328,9 @@ where:
 1 = Late
 ```
 
-The label distribution is also inspected to identify class imbalance.
+The target distribution is also inspected for class imbalance.
 
-**Artifact:**
+### Output
 
 ```text
 artifacts/02_labeled/labeled_orders.parquet
@@ -253,7 +342,7 @@ artifacts/02_labeled/labeled_orders.parquet
 
 `03_train_val_test_split.ipynb`
 
-The labeled dataset is split chronologically:
+The labeled data is divided chronologically:
 
 ```text
 70% Training
@@ -261,7 +350,8 @@ The labeled dataset is split chronologically:
 15% Test
 ```
 
-A time-based split is used because the production scenario is chronological: a model learns from historical orders and predicts outcomes for future orders.
+A chronological split better represents the intended production scenario:
+the model learns from historical orders and predicts future orders.
 
 Observed late-delivery rates:
 
@@ -271,15 +361,13 @@ Observed late-delivery rates:
 | Validation | 5.34% |
 | Test | 6.61% |
 
-The changing late-delivery rate also demonstrates why a chronological split provides a more realistic evaluation than randomly mixing orders from different time periods.
+The split is validated to ensure:
 
-The splits are validated to ensure:
+- Every order belongs to exactly one split
+- No `order_id` overlap exists between splits
+- Chronological ordering is preserved
 
-- Every row belongs to exactly one split
-- No `order_id` overlaps between splits
-- Chronological order is preserved
-
-**Artifacts:**
+### Outputs
 
 ```text
 artifacts/03_splits/train.parquet
@@ -293,11 +381,12 @@ artifacts/03_splits/test.parquet
 
 `04_eda.ipynb`
 
-Detailed EDA is performed using the **training split only**.
+EDA is performed using the **training split only**.
 
-The validation and test sets are not used to make EDA or feature-engineering decisions.
+Validation and test data are not used to make EDA or feature-engineering
+decisions.
 
-The analysis covers:
+The analysis includes:
 
 - Dataset shape and data types
 - Memory usage
@@ -308,20 +397,17 @@ The analysis covers:
 - Rare categories
 - Target distribution
 - Feature relationships with `is_late`
-- Correlations and cross-tabs
-- Monthly and weekday patterns
+- Correlations
+- Monthly patterns
+- Weekday patterns
 - Delivery seasonality
 - Customer geography
 - Seller geography
 - ZIP-code information
 
-The target is imbalanced, with late deliveries representing a minority of orders.
+The analysis also identifies features that could introduce data leakage.
 
-The EDA is used to guide feature selection and identify potential leakage.
-
-Post-delivery information, review information, target-derived columns, and identifiers are not selected as prediction-time model features.
-
-**Artifacts include:**
+### Outputs
 
 ```text
 artifacts/04_eda/
@@ -335,9 +421,7 @@ artifacts/04_eda/
 
 `05_feature_engineering.ipynb`
 
-Feature engineering converts the raw split datasets into model-ready feature tables.
-
-Prediction-time features include order, customer, payment, product, seller, geographic, and purchase-time information.
+Feature engineering converts the raw splits into model-ready feature tables.
 
 Examples of engineered temporal features include:
 
@@ -349,11 +433,12 @@ purchase_weekend
 estimated_delivery_days
 ```
 
-Only information available at the defined prediction point is used.
+Only information available at the defined prediction point is selected.
 
-Future information such as actual delivery dates and review outcomes is excluded from the model features.
+Future information such as actual delivery outcomes and review results is
+excluded.
 
-### Preprocessing
+## Preprocessing
 
 Numerical features use:
 
@@ -365,19 +450,18 @@ Categorical features use:
 - Missing-value imputation
 - One-hot encoding
 
-The preprocessing pipeline is **fitted on the training set only**:
+The preprocessing pipeline follows:
 
 ```text
-Train       → fit_transform()
-Validation  → transform()
-Test        → transform()
+Training     → fit_transform()
+Validation   → transform()
+Test         → transform()
 ```
 
-This prevents information leakage.
+The preprocessing object is fitted **only on the training set** and persisted
+for later inference.
 
-The fitted preprocessing object is saved so that production inference can reuse exactly the same transformations without fitting them again.
-
-**Artifacts:**
+### Outputs
 
 ```text
 artifacts/05_features/
@@ -391,26 +475,25 @@ artifacts/05_features/
 
 ---
 
-## Notebook 6 — Train, Tune, Evaluate
+## Notebook 6 — Train, Tune, and Evaluate
 
 `06_train_tune_evaluate.ipynb`
 
-The final notebook trains and compares classification models.
-
-A simple majority-class baseline is established first so that trained models have a clear benchmark to beat.
+The final notebook trains and compares multiple classifiers.
 
 Candidate models include:
 
-- Dummy Classifier baseline
+- Dummy Classifier
 - Logistic Regression
 - Random Forest
 - XGBoost
 - Histogram Gradient Boosting
 - LightGBM, when available
 
-Because the target is imbalanced, model selection does not rely on accuracy alone.
+Because late deliveries represent a minority class, accuracy alone is not
+used for model selection.
 
-The main evaluation metrics are:
+Important metrics include:
 
 - Precision
 - Recall
@@ -418,15 +501,18 @@ The main evaluation metrics are:
 - PR-AUC
 - Accuracy as a supporting metric
 
-For example, the initial Random Forest achieved high validation accuracy but extremely low recall for late deliveries, demonstrating why accuracy alone is misleading for this problem.
+The experiments demonstrated why imbalance-aware metrics are necessary. For
+example, a classifier may achieve high overall accuracy while detecting very
+few late orders.
 
-The strongest candidate models are tuned using the **validation split only**.
+Model selection and threshold decisions use validation data.
 
-Hyperparameters and the classification threshold can be tuned to improve the trade-off between precision and recall.
+The held-out test set is reserved for final evaluation after model decisions
+have been made.
 
-The test set is used only once at the end, after the model configuration has been selected.
+The final persisted classifier is an `XGBClassifier`.
 
-**Final artifacts:**
+### Final Outputs
 
 ```text
 artifacts/06_model/
@@ -435,15 +521,19 @@ artifacts/06_model/
 └── results.json
 ```
 
+The saved classification threshold used by the inference service is:
+
+```text
+0.40
+```
+
 ---
 
 # Leakage Prevention
 
-Preventing data leakage is a key part of the workflow.
+Leakage prevention is a central design principle of Phase 2.
 
-The model is designed around information available at prediction time.
-
-Examples of columns excluded from model inputs include:
+Examples of information excluded from prediction-time model inputs include:
 
 ```text
 order_delivered_customer_date
@@ -456,20 +546,28 @@ is_late
 delivery_label
 ```
 
-Identifiers such as `order_id`, `customer_id`, and `customer_unique_id` are also excluded from model training.
+Identifiers such as:
 
-Additionally:
+```text
+order_id
+customer_id
+customer_unique_id
+```
+
+are also excluded from model training.
+
+Additional safeguards include:
 
 - EDA uses training data only
 - Preprocessing is fitted on training data only
-- Validation is used for model selection and tuning
-- Test is reserved for final evaluation
+- Validation data is used for model selection
+- Test data is reserved for final evaluation
+- Production inference loads the fitted preprocessing object instead of
+  fitting a new one
 
 ---
 
-# Artifact-Based Workflow
-
-A central goal of Task 2 is reproducibility.
+# Phase 2 Artifact Pipeline
 
 ```text
 PostgreSQL
@@ -487,9 +585,316 @@ PostgreSQL
 06_model
 ```
 
-Each notebook reads the previous stage's artifacts instead of repeating the entire workflow.
+Each stage consumes artifacts from the previous stage instead of rebuilding
+the entire workflow.
 
-This makes the pipeline easier to reproduce, debug, and later convert into production ML code.
+This makes the ML pipeline easier to reproduce, inspect, debug, and
+productionize.
+
+### Task 2 Status
+
+- [x] Order-level ML table created
+- [x] Late/on-time target created
+- [x] Chronological train/validation/test split created
+- [x] Training-only EDA completed
+- [x] Leakage investigated
+- [x] Feature-engineering pipeline created
+- [x] Preprocessor fitted on training data only
+- [x] Preprocessing artifacts saved
+- [x] Baseline model created
+- [x] Candidate models compared
+- [x] Imbalance-aware metrics evaluated
+- [x] Model tuning performed
+- [x] Classification threshold selected
+- [x] Final model persisted
+
+**Phase 2 completed.**
+
+---
+
+# Phase 3 — Production Inference
+
+## Task 3: From Notebooks to an Inference Service
+
+Phase 3 converts the fitted Task 2 artifacts into reusable production-oriented
+Python modules and an HTTP inference service.
+
+A key architectural rule is:
+
+> Training remains in the notebooks. The inference service loads fitted
+> artifacts and never refits the model or preprocessing pipeline.
+
+---
+
+# Inference Architecture
+
+```text
+Client
+  │
+  ▼
+FastAPI
+  │
+  ▼
+Input Validation
+  │
+  ▼
+Feature Engineering
+  │
+  ▼
+Saved ColumnTransformer
+  │
+  ▼
+Saved XGBClassifier
+  │
+  ▼
+Probability
+  │
+  ▼
+Threshold = 0.40
+  │
+  ▼
+Late / On Time
+```
+
+Production logic is separated from the API layer so that the same inference
+pipeline can be called from tests, scripts, or HTTP endpoints.
+
+---
+
+# Production Inference Modules
+
+The reusable inference package is located under:
+
+```text
+src/olist_inference/
+```
+
+It separates responsibilities for:
+
+- Configuration loading
+- Artifact loading
+- Input validation
+- Feature engineering
+- Prediction
+- Logging
+- Structured prediction-event logging
+
+The service loads:
+
+```text
+artifacts/05_features/preprocessor.joblib
+artifacts/05_features/feature_list.json
+artifacts/05_features/input_features.json
+artifacts/06_model/final_model.joblib
+artifacts/06_model/model_config.json
+```
+
+No fitting occurs during prediction.
+
+---
+
+# Notebook-to-Service Parity
+
+A production inference service must reproduce the transformations used during
+model development.
+
+A parity test was performed between direct Task 2 artifact inference and the
+Task 3 service.
+
+```text
+Notebook probability: 0.44865238666534424
+Service probability:  0.44865238666534424
+Match: True
+```
+
+This confirms that the service reproduces the saved Task 2 inference pipeline.
+
+---
+
+# Input Validation
+
+Incoming inference data is validated before prediction.
+
+Checks include:
+
+- Required timestamp columns
+- Valid timestamp values
+- Estimated delivery date must not precede purchase date
+- Required model inputs
+- Valid Brazilian customer state
+- Invalid delivery-window detection
+
+Missing numerical values supported by the training pipeline remain compatible
+with the saved numerical imputers.
+
+Invalid requests are rejected rather than silently producing a prediction.
+
+---
+
+# FastAPI Service
+
+The model is exposed through FastAPI.
+
+Available endpoints:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Check service health |
+| GET | `/model` | Return model/service information |
+| POST | `/predict` | Predict one order |
+| POST | `/predict/batch` | Predict multiple orders |
+
+A prediction response contains information such as:
+
+```text
+prediction
+is_late
+probability
+threshold
+model_version
+latency_ms
+```
+
+The API automatically provides interactive documentation through Swagger.
+
+Start the service:
+
+```powershell
+python -m uvicorn app.main:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# Logging and Error Handling
+
+The production code uses Python logging instead of `print()` statements.
+
+Application logs capture:
+
+- Service/model initialization
+- Prediction requests
+- Prediction results
+- Probability
+- Threshold
+- Model version
+- Prediction latency
+- Errors and tracebacks
+
+Prediction events are also stored in structured JSON Lines format for later
+analysis and monitoring.
+
+Runtime logs are excluded from Git.
+
+---
+
+# Automated Testing
+
+Task 3 includes automated tests using `pytest`.
+
+The tests cover:
+
+- Feature engineering
+- Raw-input validation
+- Invalid input
+- Artifact loading
+- Classification threshold
+- Model prediction
+- Notebook-to-service parity
+- FastAPI inference
+- Invalid API requests
+- Batch prediction
+
+Run the complete suite with:
+
+```powershell
+python -m pytest -v
+```
+
+Code quality is checked using Ruff:
+
+```powershell
+python -m ruff check src app tests
+```
+
+The current test suite passes successfully.
+
+---
+
+# Data and Model Versioning with DVC
+
+DVC is introduced in Phase 3 to separate large ML artifacts from normal Git
+source-code versioning.
+
+Important artifacts tracked through DVC include:
+
+```text
+artifacts/03_splits/
+artifacts/05_features/
+artifacts/06_model/
+```
+
+Git tracks the corresponding `.dvc` metadata while DVC manages the artifact
+contents.
+
+This creates a foundation for reproducible data and model versioning.
+
+Typical commands include:
+
+```powershell
+python -m dvc status
+python -m dvc push
+python -m dvc pull
+```
+
+A DVC remote should be configured for environments that need to reproduce
+the artifacts on another machine.
+
+---
+
+# Data Quality
+
+The project includes two levels of input-quality work.
+
+The inference package contains explicit production validation for required
+fields and business rules.
+
+Great Expectations was also introduced as the framework for formal
+data-quality validation. Great Expectations `1.23.2` is compatible with the
+Python 3.12 Task 3 environment.
+
+Further expectation-suite integration remains part of the productionization
+roadmap.
+
+---
+
+# Phase 3 Testing Flow
+
+```text
+Raw Request
+     ↓
+Schema / Input Validation
+     ↓
+Feature Engineering
+     ↓
+Saved Preprocessor
+     ↓
+Saved Model
+     ↓
+Prediction
+     ↓
+Logging
+     ↓
+HTTP Response
+```
+
+The same core predictor is used by both automated tests and the FastAPI
+service.
 
 ---
 
@@ -498,8 +903,15 @@ This makes the pipeline easier to reproduce, debug, and later convert into produ
 ```text
 Dataset_Olist/
 │
+├── app/
+│   ├── __init__.py
+│   └── main.py
+│
 ├── assets/
 │   └── olist_schema.png
+│
+├── config/
+│   └── config.yaml
 │
 ├── data/
 │   └── raw/
@@ -516,17 +928,43 @@ Dataset_Olist/
 │   ├── 01_joined/
 │   ├── 02_labeled/
 │   ├── 03_splits/
+│   ├── 03_splits.dvc
 │   ├── 04_eda/
 │   ├── 05_features/
-│   └── 06_model/
+│   ├── 05_features.dvc
+│   ├── 06_model/
+│   └── 06_model.dvc
 │
 ├── sql/
 │   ├── 01_create_tables.sql
 │   └── 02_validation.sql
 │
 ├── src/
-│   └── ingest.py
+│   ├── ingest.py
+│   └── olist_inference/
+│       ├── __init__.py
+│       ├── artifacts.py
+│       ├── config.py
+│       ├── features.py
+│       ├── logging_config.py
+│       ├── prediction_logger.py
+│       ├── predictor.py
+│       ├── schemas.py
+│       └── validation.py
 │
+├── tests/
+│   ├── integration/
+│   │   └── test_api.py
+│   ├── model/
+│   │   ├── test_artifacts.py
+│   │   └── test_predictor.py
+│   ├── unit/
+│   │   ├── test_features.py
+│   │   └── test_validation.py
+│   └── test_parity.py
+│
+├── .dvc/
+├── .dvcignore
 ├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
@@ -534,41 +972,74 @@ Dataset_Olist/
 └── README.md
 ```
 
-Raw Olist CSV files are not included in the repository.
+The exact repository structure may evolve as later production components are
+added.
 
 ---
 
 # Running the Project
 
-## 1. Create the Python environment
+## 1. Clone the Repository
 
-```cmd
-python -m venv .venv
-
-.venv\Scripts\activate
-
-pip install -r requirements.txt
+```powershell
+git clone <repository-url>
+cd Dataset_Olist
 ```
 
-## 2. Configure PostgreSQL
+---
 
-Create a `.env` file based on `.env.example`.
+## 2. Create the Python Environment
 
-Start PostgreSQL:
+Task 3 uses Python 3.12 to support the MLOps dependency stack.
 
-```cmd
+```powershell
+py -3.12 -m venv .venv312
+.\.venv312\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+---
+
+## 3. Configure Environment Variables
+
+Create `.env` based on:
+
+```text
+.env.example
+```
+
+Do not commit the real `.env` file.
+
+---
+
+## 4. Start PostgreSQL
+
+```powershell
 docker compose up -d
 ```
 
-## 3. Create the database tables
+---
 
-```cmd
-docker exec -i olist-postgres psql -U olist_user -d olist < sql\01_create_tables.sql
+## 5. Create the Database Tables
+
+From PowerShell, the SQL file can be piped into the PostgreSQL container:
+
+```powershell
+Get-Content sql\01_create_tables.sql |
+    docker exec -i olist-postgres psql -U olist_user -d olist
 ```
 
-## 4. Add the Olist data
+---
 
-Place the CSV files under:
+## 6. Add the Raw Olist Data
+
+Place the original Olist CSV files under:
 
 ```text
 data/raw/
@@ -576,19 +1047,15 @@ data/raw/
 
 Then run:
 
-```cmd
+```powershell
 python src\ingest.py
 ```
 
-## 5. Run the ML notebooks
+---
 
-Start Jupyter:
+## 7. Run the Training Pipeline
 
-```cmd
-jupyter notebook
-```
-
-Run the Task 2 notebooks in order:
+Run the notebooks in order:
 
 ```text
 01_read_and_join.ipynb
@@ -599,101 +1066,259 @@ Run the Task 2 notebooks in order:
 06_train_tune_evaluate.ipynb
 ```
 
+This produces the fitted preprocessing and model artifacts required by the
+inference service.
+
+If the required artifacts are managed through a configured DVC remote, they
+can instead be restored with:
+
+```powershell
+python -m dvc pull
+```
+
+---
+
+## 8. Run Automated Tests
+
+```powershell
+python -m pytest -v
+```
+
+---
+
+## 9. Run Code Quality Checks
+
+```powershell
+python -m ruff check src app tests
+```
+
+---
+
+## 10. Start the Inference API
+
+```powershell
+python -m uvicorn app.main:app --reload
+```
+
+Swagger documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Health endpoint:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Model information:
+
+```text
+http://127.0.0.1:8000/model
+```
+
+---
+
+# End-to-End Project Flow
+
+```text
+                         OLIST DATA
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │     Phase 1     │
+                    │ Data Foundation │
+                    └─────────────────┘
+                             │
+                    PostgreSQL + Docker
+                             │
+                             ▼
+                    Validated Relations
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │     Phase 2     │
+                    │ ML Development  │
+                    └─────────────────┘
+                             │
+                      Order-Level Data
+                             │
+                             ▼
+                      Target Creation
+                             │
+                             ▼
+                  Train / Validation / Test
+                             │
+                             ▼
+                     Feature Engineering
+                             │
+                             ▼
+                       Model Training
+                             │
+                             ▼
+                       Saved Artifacts
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │     Phase 3     │
+                    │    Inference    │
+                    └─────────────────┘
+                             │
+                      Artifact Loading
+                             │
+                             ▼
+                        Validation
+                             │
+                             ▼
+                    Feature Engineering
+                             │
+                             ▼
+                    Saved Preprocessor
+                             │
+                             ▼
+                     XGBoost Classifier
+                             │
+                             ▼
+                          FastAPI
+                             │
+                             ▼
+                     Late / On Time
+```
+
+---
+
+# MLOps Principles Applied
+
+The project applies the following MLOps practices:
+
+- Reproducible database setup
+- Separation of data, training, and inference stages
+- Artifact-based ML workflows
+- Chronological evaluation
+- Training-only preprocessing
+- Leakage-aware feature engineering
+- Persisted preprocessing objects
+- Persisted model artifacts
+- Configuration separated from application code
+- No refitting during inference
+- Notebook-to-production prediction parity
+- Input validation
+- Error handling
+- Application and prediction logging
+- Automated unit and integration testing
+- Code-quality checks
+- Data/model artifact versioning with DVC
+- Production-oriented API design
+
 ---
 
 # Project Status
 
-### Task 1
+## Phase 1 — Data Foundation
 
-- [x] PostgreSQL environment created with Docker
-- [x] Relational schema created
-- [x] Nine Olist datasets ingested
-- [x] Relationships validated
-- [x] SQL joins tested
+- [x] PostgreSQL environment
+- [x] Docker database
+- [x] Relational schema
+- [x] Olist data ingestion
+- [x] Data validation
+- [x] SQL relationship testing
 
-### Task 2
+**Status: Completed**
 
-- [x] Order-level ML table created
-- [x] Late/on-time target created
-- [x] Chronological train/validation/test split created
-- [x] Training-only EDA completed
-- [x] Feature engineering pipeline created
-- [x] Fitted preprocessing objects saved
-- [x] Baseline and candidate models trained
-- [x] Imbalance-aware metrics evaluated
-- [x] Model tuning performed
-- [x] Final model and results saved
+## Phase 2 — ML Development
 
-**Tasks 1 and 2 completed.**
+- [x] Order-level ML dataset
+- [x] Target creation
+- [x] Chronological split
+- [x] Training-only EDA
+- [x] Leakage analysis
+- [x] Feature engineering
+- [x] Reproducible preprocessing
+- [x] Model comparison
+- [x] Model tuning
+- [x] Threshold selection
+- [x] Final model persistence
+
+**Status: Completed**
+
+## Phase 3 — Production Inference
+
+- [x] Modular inference package
+- [x] Configuration management
+- [x] Saved artifact loading
+- [x] Production feature engineering
+- [x] Input validation
+- [x] Prediction service
+- [x] Notebook-to-service parity
+- [x] FastAPI service
+- [x] Single prediction endpoint
+- [x] Batch prediction endpoint
+- [x] Health endpoint
+- [x] Model information endpoint
+- [x] Logging
+- [x] Error handling
+- [x] Structured prediction logging
+- [x] Automated testing
+- [x] API integration testing
+- [x] Ruff code-quality checks
+- [x] DVC artifact tracking
+- [x] Great Expectations-compatible environment
+- [ ] Great Expectations suites integrated into inference
+- [ ] MLflow experiment tracking and model registry
+- [ ] Dockerized inference service
+- [ ] CI/CD pipeline
+- [ ] Production monitoring and alerting
+
+**Status: In Progress**
 
 ---
 
-## MLOps Principles Applied
+# Productionization Roadmap
 
-This project introduces several practices that will support later productionization:
+The remaining Phase 3 work focuses on extending the current inference
+foundation with:
 
-- Reproducible database setup
-- Clear separation between pipeline stages
-- Versionable intermediate artifacts
-- Training-only fitting of preprocessing transformations
-- Leakage-aware feature engineering
-- Chronological evaluation
-- Baseline comparison
-- Imbalance-aware model evaluation
-- Validation-based model selection
-- Held-out test evaluation
-- Persisted preprocessing and model objects
-
-The resulting artifacts provide the foundation for converting the notebook workflow into a reusable training and inference pipeline.
-
-## Task 3 — Inference Service (In Progress)
-
-Task 3 builds an inference service around the model and fitted
-preprocessor from Task 2. Training remains in the notebooks.
-
-### Development setup
-
-Run these commands from the repository root using Python 3.14.7.
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements/dev.txt
-.\.venv\Scripts\python.exe -m pip check
+```text
+Great Expectations
+        ↓
+MLflow Tracking & Model Registry
+        ↓
+Dockerized Inference Service
+        ↓
+CI/CD
+        ↓
+Metrics & Drift Monitoring
+        ↓
+Production Deployment
 ```
 
-For runtime dependencies only, install `requirements/runtime.txt`.
+These components build on the existing tested inference service without
+changing the Task 2 training methodology.
 
-### Project structure
+---
 
-- `app/`: API routes and request/response schemas.
-- `config/`: inference configuration.
-- `src/olist_inference/`: reusable inference modules.
-- `tests/`: unit, data, model, and integration tests.
-- `requirements/`: pinned runtime and development dependencies.
-- `models/`: downloaded model cache.
-- `notebooks/`: existing analysis and training notebooks.
-- `artifacts/`: saved Task 2 datasets and fitted objects.
+# Summary
 
-### Configuration
+This project demonstrates the evolution of a machine learning system through
+three phases:
 
-The default configuration is `config/inference.json`.
-Relative paths are resolved against the project root.
+**Phase 1 — Data Foundation**
 
-To use another configuration in PowerShell:
+Relational Olist data is ingested and validated using PostgreSQL and Docker.
 
-```powershell
-$env:OLIST_CONFIG = "config/inference.json"
-```
+**Phase 2 — ML Development**
 
-Keep secrets and connection strings in environment variables.
-Never commit `.env`.
+The relational data is transformed into a leakage-aware, reproducible machine
+learning pipeline for late-delivery prediction.
 
-The classification threshold is read from the saved
-`artifacts/06_model/model_config.json`; its current value is 0.40.
+**Phase 3 — Production Inference**
 
-### Progress
+The fitted Task 2 pipeline is converted into modular production code and
+exposed through a tested FastAPI inference service, with configuration,
+validation, logging, prediction parity, automated testing, and DVC artifact
+versioning.
 
-- Repository structure and configuration loader added.
-- Runtime and development dependencies pinned.
-- Saved preprocessor and model loaded in a fresh environment.
-- Prediction parity, API, containers, and CI/CD are pending.
+The project therefore progresses from **raw relational data → reproducible ML
+development → production-oriented inference**, while maintaining separation
+between training and serving.
